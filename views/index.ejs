@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Todo List</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script defer src="/scripts.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Interactive SCoreBoard</h1>
+    
+    <!-- Add Task Players -->
+    <form id="add-player-form">
+      <input type="text" id="player-input" placeholder="Enter Player Nmae" required />
+      <button type="submit">Add Name</button>
+    </form>
+
+    <!-- Player List -->
+    <ul id="player-list">
+      <% Players.forEach(Player => { %>
+        <li class="player-item" data-id="<%= Player._id %>">
+          <span class="task-name"><%= Player.name %></span>
+          <span class="player-score"><%= Player.score %></span>
+          <button class="Add-Score">ADD Score</button>
+          <button class="delete-player">Delete Player</button>
+        </li>
+      <% }) %>
+      <!-- <button class="reset-player" id="reset-player">Reset Scores</button> -->
+    </ul>
+
+    <button class="reset-player" id="reset-player">Reset Scores</button>
+  </div>
+</body>
+</html>
