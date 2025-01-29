@@ -97,6 +97,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load players from localStorage
   const loadPlayers = () => {
     const players = JSON.parse(localStorage.getItem("players")) || [];
+// Sort players by score in descending order
+  players.sort((a, b) => b.score - a.score);
+
+
     playerList.innerHTML = "";
     players.forEach((player, index) => {
       const playerItem = document.createElement("li");
