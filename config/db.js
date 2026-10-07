@@ -1,3 +1,4 @@
+dotenv.config({path:'config.env'});
 const mongoose=require('mongoose');
 
 const db=()=>{
