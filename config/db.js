@@ -1,7 +1,7 @@
 const mongoose=require('mongoose');
 
 const db=()=>{
-    mongoose.connect("mongodb+srv://ahmed:xZOnZF8S0adh6hNa@cluster0.cdir2.mongodb.net/SCORE-BOARD", {useNewUrlParser: true, useUnifiedTopology: true});
+    mongoose.connect("mongodb+srv://MONGOUSER:MONGOPASS@cluster0.cdir2.mongodb.net/SCORE-BOARD", {useNewUrlParser: true, useUnifiedTopology: true});
 const con=mongoose.connection;
 con.on('error',()=>{
     console.log('DB connection failed');
