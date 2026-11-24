@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f3f4f6">
+  <title>SEKREW Scoreboard</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script defer src="/scripts.js"></script>
+</head>
+<body>
+  <main class="container">
+    <h1>SEKREW Scoreboard</h1>
+
+    <form id="add-player-form">
+      <label class="visually-hidden" for="player-input">Player name</label>
+      <input id="player-input" type="text" placeholder="Enter player name" maxlength="60" required>
+      <button type="submit">Add Player</button>
+    </form>
+
+    <p id="storage-error" role="alert" hidden></p>
+    <ul id="player-list" aria-live="polite"></ul>
+    <button class="reset-player" id="reset-player" type="button">Reset Scores</button>
+  </main>
+</body>
+</html>

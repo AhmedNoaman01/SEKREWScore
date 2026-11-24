@@ -1,34 +1,16 @@
-const express=require('express');
-const dotenv=require('dotenv');
-const db=require('./config/db');
-dotenv.config({path:'config.env'});
-const methodOverride = require('method-override');
-const path = require("path");
+const express = require('express');
+const path = require('node:path');
 
+const app = express();
+const publicDirectory = path.join(__dirname, 'public');
 
-const app=express();
-app.use(methodOverride('_method'));
+app.use(express.static(publicDirectory));
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.set('view engine', 'ejs'); // Set EJS as the template engine
-app.set("views", path.join(__dirname, "views"));
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Scoreboard available at http://localhost:${port}`);
+  });
+}
 
-// // Serve static files
-app.use(express.static(path.join(__dirname, "public")));
-
-//middleware 
-app.use(express.json());
-
-//connect to mongodb
-db();
-
-//routes
-app.use('/',require('./routes/BoardRoutes'));
-
-
-const port=process.env.PORT || 3000;
-app.listen(port,()=>{
-    console.log(`server listening on port ${port}`);
-});
-  
+module.exports = app;

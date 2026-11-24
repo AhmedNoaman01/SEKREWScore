@@ -1,184 +1,175 @@
-//Server-Side Server
-// document.addEventListener("DOMContentLoaded", () => {
-//   const playerForm = document.getElementById("add-player-form");
-//   const playerInput = document.getElementById("player-input");
-//   const playerList = document.getElementById("player-list");
-
-//   // Add a new player
-//   playerForm.addEventListener("submit", async (e) => {
-//       e.preventDefault();
-//       const name = playerInput.value.trim();
-//       if (!name) return;
-      
-//       const response = await fetch("/", {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify({ name, score: 0 })
-//       });
-      
-//       if (response.ok) {
-//           window.location.reload();
-//       } else {
-//           console.error("Failed to add player");
-//       }
-//   });
-
-//   // Update player score
-//   playerList.addEventListener("click", async (e) => {
-//     if (e.target.classList.contains("Add-Score")) {
-//         const playerItem = e.target.closest(".player-item");
-//         const playerId = playerItem.dataset.id;
-//         const scoreInput = prompt("Enter score to add:");
-//         const scoreValue = parseInt(scoreInput, 10);
-        
-//         if (!isNaN(scoreValue)) {
-//             const response = await fetch(`/${playerId}`, {
-//                 method: "PUT",
-//                 headers: { "Content-Type": "application/json" },
-//                 body: JSON.stringify({ score: scoreValue })
-//             });
-            
-//             if (response.ok) {
-//                 window.location.reload();
-//             } else {
-//                 console.error("Failed to update score");
-//             }
-//         } else {
-//             alert("Please enter a valid number");
-//         }
-//     }
-// });
-
-//   // Delete a player
-//   playerList.addEventListener("click", async (e) => {
-//       if (e.target.classList.contains("delete-player")) {
-//           const playerItem = e.target.closest(".player-item");
-//           const playerId = playerItem.dataset.id;
-          
-//           const confirmation = confirm("Are you sure you want to delete this player?");
-//           if (!confirmation) return;
-          
-//           const response = await fetch(`/${playerId}`, { method: "DELETE" });
-          
-//           if (response.ok) {
-//               playerItem.remove();
-//           } else {
-//               console.error("Failed to delete player");
-//           }
-//       }
-//   });
-
-// //reset scores of the players 
-//   const resetButton = document.getElementById("reset-player");
-//   resetButton.addEventListener("click", async () => {
-//     const confirmation = confirm("Are you sure you want to delete this player?");
-//           if (!confirmation) return;
-//       const response = await fetch("/players/reset", { method: "PUT" });
-      
-//       if (response.ok) {
-//           window.location.reload();
-//       } else {
-//           console.error("Failed to reset scores");
-//       }
-//   });
-
-
-// });
-
-//Client Side Server
-
-
 document.addEventListener("DOMContentLoaded", () => {
   const playerForm = document.getElementById("add-player-form");
   const playerInput = document.getElementById("player-input");
   const playerList = document.getElementById("player-list");
   const resetButton = document.getElementById("reset-player");
+  const storageError = document.getElementById("storage-error");
+  const storageKey = "players";
+  let players = [];
 
-  // Load players from localStorage
-  const loadPlayers = () => {
-    const players = JSON.parse(localStorage.getItem("players")) || [];
-// Sort players by score in descending order
-  players.sort((a, b) => b.score - a.score);
+  const showError = (message) => {
+    storageError.textContent = message;
+    storageError.hidden = false;
+  };
 
+  const clearError = () => {
+    storageError.textContent = "";
+    storageError.hidden = true;
+  };
 
-    playerList.innerHTML = "";
-    players.forEach((player, index) => {
+  const renderPlayers = () => {
+    const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+    const items = sortedPlayers.map((player) => {
       const playerItem = document.createElement("li");
       playerItem.classList.add("player-item");
-      playerItem.dataset.id = index;
-      playerItem.innerHTML = `
-        ${player.name} - Score: ${player.score}
-        <button class="Add-Score">Add Score</button>
-        <button class="delete-player">Delete</button>
-      `;
-      playerList.appendChild(playerItem);
+      playerItem.dataset.id = player.id;
+
+      const name = document.createElement("span");
+      name.classList.add("task-name");
+      name.textContent = player.name;
+
+      const score = document.createElement("span");
+      score.classList.add("player-score");
+      score.textContent = String(player.score);
+
+      const addScoreButton = document.createElement("button");
+      addScoreButton.type = "button";
+      addScoreButton.classList.add("Add-Score");
+      addScoreButton.textContent = "Add Score";
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.classList.add("delete-player");
+      deleteButton.textContent = "Delete Player";
+
+      playerItem.append(name, score, addScoreButton, deleteButton);
+      return playerItem;
     });
+
+    playerList.replaceChildren(...items);
   };
 
-  // Save players to localStorage
-  const savePlayers = (players) => {
-    localStorage.setItem("players", JSON.stringify(players));
+  const savePlayers = (nextPlayers) => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(nextPlayers));
+      players = nextPlayers;
+      clearError();
+      renderPlayers();
+      return true;
+    } catch (error) {
+      showError(`Could not save players in this browser: ${error.message}`);
+      return false;
+    }
   };
 
-  // Add a new player
-  playerForm.addEventListener("submit", (e) => {
-    e.preventDefault();
+  const loadPlayers = () => {
+    const savedPlayers = localStorage.getItem(storageKey);
+    if (savedPlayers === null) {
+      return [];
+    }
+
+    const parsedPlayers = JSON.parse(savedPlayers);
+    if (!Array.isArray(parsedPlayers)) {
+      throw new Error("Saved player data is not a list.");
+    }
+
+    let needsMigration = false;
+    const loadedPlayers = parsedPlayers.map((player) => {
+      if (
+        !player ||
+        typeof player.name !== "string" ||
+        !Number.isSafeInteger(player.score)
+      ) {
+        throw new Error("Saved player data is invalid.");
+      }
+
+      if (typeof player.id === "string" && player.id.length > 0) {
+        return { id: player.id, name: player.name, score: player.score };
+      }
+
+      needsMigration = true;
+      return {
+        id: crypto.randomUUID(),
+        name: player.name,
+        score: player.score,
+      };
+    });
+
+    if (needsMigration) {
+      localStorage.setItem(storageKey, JSON.stringify(loadedPlayers));
+    }
+
+    return loadedPlayers;
+  };
+
+  const createPlayerId = () => crypto.randomUUID();
+
+  try {
+    players = loadPlayers();
+    renderPlayers();
+  } catch (error) {
+    showError(`Could not load saved players: ${error.message}`);
+    playerForm.querySelectorAll("input, button").forEach((control) => {
+      control.disabled = true;
+    });
+    resetButton.disabled = true;
+    return;
+  }
+
+  playerForm.addEventListener("submit", (event) => {
+    event.preventDefault();
     const name = playerInput.value.trim();
     if (!name) return;
 
-    const players = JSON.parse(localStorage.getItem("players")) || [];
-    players.push({ name, score: 0 });
-    savePlayers(players);
-    loadPlayers();
-    playerInput.value = "";
+    if (savePlayers([...players, { id: createPlayerId(), name, score: 0 }])) {
+      playerInput.value = "";
+    }
   });
 
-  // Update player score
-  playerList.addEventListener("click", (e) => {
-    if (e.target.classList.contains("Add-Score")) {
-      const playerItem = e.target.closest(".player-item");
-      const playerId = playerItem.dataset.id;
+  playerList.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    const playerItem = button?.closest(".player-item");
+    if (!playerItem) return;
+
+    const playerId = playerItem.dataset.id;
+    const player = players.find((candidate) => candidate.id === playerId);
+    if (!player) return;
+
+    if (button.classList.contains("Add-Score")) {
       const scoreInput = prompt("Enter score to add:");
-      const scoreValue = parseInt(scoreInput, 10);
+      if (scoreInput === null) return;
 
-      if (!isNaN(scoreValue)) {
-        const players = JSON.parse(localStorage.getItem("players")) || [];
-        players[playerId].score += scoreValue;
-        savePlayers(players);
-        loadPlayers();
-      } else {
-        alert("Please enter a valid number");
+      const scoreValue = scoreInput.trim() === "" ? Number.NaN : Number(scoreInput);
+      const updatedScore = player.score + scoreValue;
+      if (
+        !Number.isSafeInteger(scoreValue) ||
+        !Number.isSafeInteger(updatedScore)
+      ) {
+        alert("Please enter a valid whole number.");
+        return;
       }
+
+      savePlayers(
+        players.map((candidate) =>
+          candidate.id === playerId
+            ? { ...candidate, score: updatedScore }
+            : candidate,
+        ),
+      );
+      return;
+    }
+
+    if (button.classList.contains("delete-player")) {
+      if (!confirm("Are you sure you want to delete this player?")) return;
+
+      savePlayers(players.filter((candidate) => candidate.id !== playerId));
     }
   });
 
-  // Delete a player
-  playerList.addEventListener("click", (e) => {
-    if (e.target.classList.contains("delete-player")) {
-      const playerItem = e.target.closest(".player-item");
-      const playerId = playerItem.dataset.id;
-
-      const confirmation = confirm("Are you sure you want to delete this player?");
-      if (!confirmation) return;
-
-      const players = JSON.parse(localStorage.getItem("players")) || [];
-      players.splice(playerId, 1);
-      savePlayers(players);
-      loadPlayers();
-    }
-  });
-
-  // Reset scores of the players
   resetButton.addEventListener("click", () => {
     const confirmation = confirm("Are you sure you want to reset all scores?");
     if (!confirmation) return;
 
-    const players = JSON.parse(localStorage.getItem("players")) || [];
-    players.forEach(player => player.score = 0);
-    savePlayers(players);
-    loadPlayers();
+    savePlayers(players.map((player) => ({ ...player, score: 0 })));
   });
-
-  // Initial load
-  loadPlayers();
 });
